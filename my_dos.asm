@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Tuesday,May 28th 2019, 12:15:13 am
+ * Last Modified: Tuesday,May 28th 2019, 7:52:08 am
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -109,6 +109,7 @@ int 21h
 call init8254
 call init8255
 call int_start
+call seg_show
 
 main:
     mov ah,1      ;wait key input
@@ -172,12 +173,6 @@ init8254 proc near
     mov dx,io8254c;8254 Timer1->function3 
     mov al,76h
     out dx,al 
-    ;Elevator stops at first
- ;   mov dx,io8254b; Timer1.value=1000 
- ;   mov ax,1000
- ;   out dx,al 
- ;   mov al,ah 
- ;   out dx,al 
     pop ax
     pop dx 
     ret
@@ -409,9 +404,7 @@ update_led_data_view:
     mov al, level_select
     xor al, ah
     mov level_select, al
-    
-    mov dx, io74273
-    out dx, al
+    call led_show
 update_led_data_ret:
     pop dx
     pop cx
@@ -475,6 +468,37 @@ key_update_ret:
     pop ax
     ret
 key_update endp
+;param: none
+;ret:   none
+led_show proc near
+    push ax
+    push dx
+    mov al, level_select
+    mov dx, io74273
+    out dx, al
+    pop dx
+    pop ax
+    ret
+led_show endp
+;param: none
+;ret:   none
+seg_show proc near
+    push ax
+    push dx
+    push bx
+    lea bx, seg_led_code
+    mov al, cur_level
+    dec al
+    xor ah, ah
+    add bx, ax
+    mov al, [bx]
+    mov dx, io8255b
+    out dx, al
+    pop bx
+    pop dx
+    pop ax
+    ret
+seg_show endp
 ;param: none
 ;ret:   none
 oled_update proc near
