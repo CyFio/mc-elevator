@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Monday,May 27th 2019, 11:38:09 pm
+ * Last Modified: Tuesday,May 28th 2019, 12:02:24 am
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -33,10 +33,10 @@ up              equ     1
 down            equ     0               ;direction define
 ;key map
 ESC             equ     27
-run_key         equ     'r'
-stop_key        equ     's'
-direct_key      equ     'd'
-pause_key       equ     'p'
+key_run         equ     'r'
+key_stop        equ     's'
+key_direct      equ     'd'
+key_pause       equ     'p'
 
 ;interrupt
 int_vect        equ     073H            ;use INT 073h
@@ -68,8 +68,14 @@ menu            db      '************************************************',0DH,0
                 db      'd------------go directly!',0Dh,0Ah  
                 db      's------------stop!',0Dh,0Ah 
                 db      'p------------pause!',0Dh,0Ah,'$' 
-lift_info       db      'lift running!', 0dh, 0ah, '$'
-zawaludo        db      'The WORLD!!!',0dh,0ah,'$'
+lift_info       db      'lift running!',0dh, 0ah, '$'
+zawaludo        db      'The WORLD!!!                             ',0ah,'$'
+str_continue    db      'elevator continues!                      ',0ah,'$'
+str_pause       db      'elevator paused!                         ',0ah,'$'
+str_start       db      'elevator starts!                         ',0ah,'$'
+str_stop        db      'elevator stops!                          ',0ah,'$'
+str_direct_st   db      'elevator direct mode: on                 ',0ah,'$'
+str_direct_ed   db      'elevator direct mode: off                ',0ah,'$'
 
 ;elevator data
 is_on           db      true           ;whether the elevator is on
@@ -253,7 +259,29 @@ printf proc near
 printf endp
 ;param: none
 ;ret:   none
-the_world proc near ;stop the timer, stop the elevator
+elevator_stop proc near ;stop the timer, stop the elevator
+    cli
+    push dx
+    push ax
+    push ds
+    mov ax, data
+    mov ds, ax
+    mov dx, str_stop
+    call print_str
+    mov al, false
+    mov is_running, al
+    mov dx,io8254c;this OCW writing step stops the timer
+    mov al,76h
+    out dx,al 
+    pop ds
+    pop ax
+    pop dx
+    sti
+    ret
+elevator_stop endp
+;param: none
+;ret:   none
+elevator_pause proc near ;stop the timer, stop the elevator
     cli
     push dx
     push ax
@@ -273,20 +301,17 @@ the_world proc near ;stop the timer, stop the elevator
     pop dx
     sti
     ret
-the_world endp
+elevator_pause endp
 ;param: none
 ;ret:   none
-continue proc near ;电梯继续
+elevator_start proc near ;elevator starts
     cli
     push dx
     push ax
     push ds
     mov ax, data
     mov ds, ax
- ;   mov dx, offset zawaludo
-;    mov ah, 09h
-;    int 21h
-    mov al, 1
+    mov al, true
     mov is_running, al
     mov dx,io8254c;8254 Timer1->function3 
     mov al,76h
@@ -296,12 +321,41 @@ continue proc near ;电梯继续
     out dx,al 
     mov al,ah 
     out dx,al 
+    mov dx, str_start
+    call print_str
     pop ds
     pop ax
     pop dx
     sti
     ret
-continue endp
+elevator_start endp
+;param: none
+;ret:   none
+elevator_continue proc near ;elevator continues
+    cli
+    push dx
+    push ax
+    push ds
+    mov ax, data
+    mov ds, ax
+    mov al, true
+    mov is_running, al
+    mov dx,io8254c;8254 Timer1->function3 
+    mov al,76h
+    out dx,al 
+    mov dx,io8254b;Timer1.value = 1000 
+    mov ax,1000
+    out dx,al 
+    mov al,ah 
+    out dx,al 
+    mov dx, str_continue
+    call print_str
+    pop ds
+    pop ax
+    pop dx
+    sti
+    ret
+elevator_continue endp
 ;brief: check if al refers to a level
 ;param al:keycode
 ;ret   bl:is_level
@@ -390,8 +444,31 @@ key_update_num:
     cmp bl, true
     jne key_update_r
     call update_led_data
+    jmp key_update_ret
 key_update_r:
-    
+    mov bl, is_running
+    cmp bl, false
+    jne key_update_p
+    cmp al, key_run
+    jne key_update_p
+    call elevator_start
+    jmp key_update_ret
+key_update_p:   
+    mov bl, is_running
+    cmp bl, true
+    jne key_update_s
+    cmp al, key_pause
+    jne key_update_s
+    call elevator_pause
+    jmp key_update_ret
+key_update_s:   
+    mov bl, is_running
+    cmp bl, true
+    jne key_update_ret
+    cmp al, key_stop
+    jne key_update_ret
+    call elevator_stop
+key_update_ret:
     push bx
     pop dx
     pop ax
@@ -402,6 +479,19 @@ key_update endp
 oled_update proc near
     ret
 oled_update endp
+;param: dx: str offset
+;ret:   none
+print_str proc near
+    push ax
+    push ds
+    mov ax, data
+    mov ds, ax
+    mov ah, 09h
+    int 21h
+    pop ds
+    pop ax
+    ret
+print_str endp
 ;param: none
 ;ret:   none
 int_proc proc far ;INT process
