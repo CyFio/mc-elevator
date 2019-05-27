@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Tuesday,May 28th 2019, 12:02:24 am
+ * Last Modified: Tuesday,May 28th 2019, 12:15:13 am
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -273,6 +273,10 @@ elevator_stop proc near ;stop the timer, stop the elevator
     mov dx,io8254c;this OCW writing step stops the timer
     mov al,76h
     out dx,al 
+    mov al, 0
+    mov level_select, 0
+    mov dx, io74273
+    out dx, al
     pop ds
     pop ax
     pop dx
@@ -288,14 +292,9 @@ elevator_pause proc near ;stop the timer, stop the elevator
     push ds
     mov ax, data
     mov ds, ax
-    mov dx, offset zawaludo
-    mov ah, 09h
-    int 21h
-    mov al, 0
-    mov is_running, al
-    mov dx,io8254c;this OCW writing step stops the timer
-    mov al,76h
-    out dx,al 
+    mov dx, str_pause
+    call print_str
+
     pop ds
     pop ax
     pop dx
@@ -338,16 +337,7 @@ elevator_continue proc near ;elevator continues
     push ds
     mov ax, data
     mov ds, ax
-    mov al, true
-    mov is_running, al
-    mov dx,io8254c;8254 Timer1->function3 
-    mov al,76h
-    out dx,al 
-    mov dx,io8254b;Timer1.value = 1000 
-    mov ax,1000
-    out dx,al 
-    mov al,ah 
-    out dx,al 
+
     mov dx, str_continue
     call print_str
     pop ds
@@ -436,6 +426,9 @@ key_update proc near
     push dx
     push bx
     
+    mov bl, is_on
+    cmp bl, true
+    jne key_update_p
     call check_ignore
     cmp bl, true
     jne key_update_r
@@ -448,26 +441,34 @@ key_update_num:
 key_update_r:
     mov bl, is_running
     cmp bl, false
-    jne key_update_p
+    jne key_update_s
     cmp al, key_run
-    jne key_update_p
+    jne key_update_s
     call elevator_start
-    jmp key_update_ret
-key_update_p:   
-    mov bl, is_running
-    cmp bl, true
-    jne key_update_s
-    cmp al, key_pause
-    jne key_update_s
-    call elevator_pause
     jmp key_update_ret
 key_update_s:   
     mov bl, is_running
     cmp bl, true
-    jne key_update_ret
+    jne key_update_p
     cmp al, key_stop
-    jne key_update_ret
+    jne key_update_p
     call elevator_stop
+    jmp key_update_ret
+key_update_p:   
+    mov bl, is_running
+    cmp bl, true
+    jne key_update_ret
+    cmp al, key_pause
+    jne key_update_ret
+    mov bl, is_on
+    xor bl, true
+    mov is_on, bl
+    cmp bl, true
+    jne key_update_resume
+    call elevator_pause
+    jmp key_update_ret
+key_update_resume:
+    call elevator_continue
 key_update_ret:
     push bx
     pop dx
