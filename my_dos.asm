@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Monday,May 27th 2019, 11:19:26 pm
+ * Last Modified: Monday,May 27th 2019, 11:38:09 pm
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -331,6 +331,48 @@ check_ignore endp
 ;param al:keycode
 ;ret   none
 update_led_data proc near
+    push ax
+    push bx
+    push cx
+    push dx
+    
+    mov cl, al
+    sub cl, '1'
+    mov al, cur_level
+    cmp cl, al
+    jne update_led_data_count
+    mov al, is_running
+    cmp al, true
+    jne update_led_data_count
+    jmp update_led_data_ret
+update_led_data_count:
+    mov dl, select_count
+    mov bh, level_select
+    shr bh, cl
+    and bh, true
+    cmp bh, true
+    jne update_led_data_minus
+update_led_data_plus:
+    inc dl
+    mov select_count, dl
+    jmp update_led_data_view
+update_led_data_minus:
+    dec dl
+    mov select_count, dl
+update_led_data_view:
+    mov ah, 1
+    shl ah, cl
+    mov al, level_select
+    xor al, ah
+    mov level_select, al
+    
+    mov dx, io74273
+    out dx, al
+update_led_data_ret:
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     ret
 update_led_data endp
 ;param al:keycode
@@ -347,7 +389,7 @@ key_update_num:
     call is_level
     cmp bl, true
     jne key_update_r
-    
+    call update_led_data
 key_update_r:
     
     push bx
