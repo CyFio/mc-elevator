@@ -1,5 +1,5 @@
 ;
-; CopyRight (C) 2019 CyFio OranGe™
+; CopyRight (C) 2019 CyFio OranGeâ„?
 ; Created Time: Thursday,May 23rd 2019, 2:26:48 pm
 ; Author: CyFio OranGe
 ; Author E-mail: 213170687@seu.edu.cn
@@ -129,13 +129,13 @@ main:
 
 is_esc:
     cmp al,27     ;if key is ESC
-    je exit       ;quit
+    jz exit       ;quit
     call key_update
 
 main_continue:
     call far ptr oled_update
-    mov dx, offset str_normal
-    call far ptr print_str 
+   ; mov dx, offset str_normal
+   ; call far ptr print_str 
     jmp main
 
 exit: cli
@@ -381,13 +381,15 @@ update_led_data proc near
     push dx
     
     mov cl, al
+    mov dl, al
     sub cl, '1'
+    sub dl, '0'
     mov al, cur_level
-    cmp cl, al
-    jne update_led_data_count
+    cmp dl, al
+    jnz update_led_data_count
     mov al, is_running
     cmp al, true
-    jne update_led_data_count
+    jz update_led_data_count
     jmp update_led_data_ret
 update_led_data_count:
     mov dl, select_count
@@ -395,7 +397,7 @@ update_led_data_count:
     shr bh, cl
     and bh, true
     cmp bh, true
-    jne update_led_data_minus
+    jnz update_led_data_minus
 update_led_data_plus:
     inc dl
     mov select_count, dl
@@ -426,43 +428,43 @@ key_update proc near
     
     mov bl, is_on
     cmp bl, true
-    jne key_update_p
+    jnz key_update_p
     call check_ignore
     cmp bl, true
-    jne key_update_r
+    jz key_update_r
 key_update_num:
     call is_level
     cmp bl, true
-    jne key_update_r
+    jnz key_update_r
     call update_led_data
     jmp key_update_ret
 key_update_r:
     mov bl, is_running
     cmp bl, false
-    jne key_update_s
+    jnz key_update_s
     cmp al, key_run
-    jne key_update_s
+    jnz key_update_s
     call elevator_start
     jmp key_update_ret
 key_update_s:   
     mov bl, is_running
     cmp bl, true
-    jne key_update_p
+    jnz key_update_p
     cmp al, key_stop
-    jne key_update_p
+    jnz key_update_p
     call elevator_stop
     jmp key_update_ret
 key_update_p:   
     mov bl, is_running
     cmp bl, true
-    jne key_update_ret
+    jnz key_update_ret
     cmp al, key_pause
-    jne key_update_ret
+    jnz key_update_ret
     mov bl, is_on
     xor bl, true
     mov is_on, bl
     cmp bl, true
-    jne key_update_resume
+    jnz key_update_resume
     call elevator_pause
     jmp key_update_ret
 key_update_resume:
@@ -531,7 +533,7 @@ direction_change proc far
     push dx
     mov al, level_select
     cmp al, 0
-    jne direction_change_main
+    jnz direction_change_main
     mov al, false
     mov is_running, al
     jmp direction_change_ret
@@ -540,12 +542,12 @@ direction_change_main:
     xor bh, bh          ;use bh as flag
     mov bl, direction
     cmp bl, up
-    jne direction_change_down
+    jnz direction_change_down
 direction_change_up:
     mov ah, al
     shr ah, cl
     cmp ah, 0 ;if current direction is up and upper levels selected, go up
-    jne direction_change_ret
+    jnz direction_change_ret
     xor bl, up
     mov direction, bl ;change direction
     inc bh
@@ -563,7 +565,7 @@ direction_change_down:
     shl ah, cl
     pop cx
     cmp ah, 0
-    jne direction_change_ret
+    jnz direction_change_ret
     xor bl, up
     mov direction, bl ;change direction
     inc bh
@@ -585,7 +587,7 @@ elevator_action proc far
     mov ah, cur_level
     mov al, direction
     cmp al, up
-    jne elevator_action_down
+    jnz elevator_action_down
 elevator_action_up:
     inc ah
     jmp elevator_action_ret
@@ -612,7 +614,7 @@ arrival_check proc far
     shl ah, cl
     and dl, ah  ;if current level selected
     cmp dl,0
-    je arrival_check_ret;not arrival
+    jz arrival_check_ret;not arrival
     mov bl, true
     xor al, ah  ;arrival, level unselected
     mov level_select, al
@@ -655,7 +657,7 @@ elevator_update proc far
     call elevator_action
     call arrival_check
     cmp bl, true
-    jne elevator_update_ret
+    jnz elevator_update_ret
     call elevator_arrival
 elevator_update_ret:
     pop bx
