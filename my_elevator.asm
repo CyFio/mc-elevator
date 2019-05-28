@@ -1,5 +1,5 @@
 ;
-; CopyRight (C) 2019 CyFio OranGeâ„?
+; CopyRight (C) 2019 CyFio OranGeâ�?
 ; Created Time: Thursday,May 23rd 2019, 2:26:48 pm
 ; Author: CyFio OranGe
 ; Author E-mail: 213170687@seu.edu.cn
@@ -88,7 +88,7 @@ select_count    db      0              ;number of selected levels
 cur_level       db      1              ;current level the elevator locates
 direction       db      up             ;current moving direction
 is_ignore       db      false          ;whether the elevator ignore level select
-oled_ptr_row    dw      offset oled_1  ;oled table ptr
+oled_ptr_row    dw      offset oled_repair  ;oled table ptr
 oled_ptr_col    db      0
 ;data table
 seg_led_code    db   3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,6fh ;seg_led code
@@ -136,11 +136,11 @@ main:
     mov ah, 0
     int 16h
 
- ;   push dx
- ;   xor dh, dh
- ;   mov dl, al
- ;   call printf 
- ;   pop dx
+   ; push dx
+   ; xor dh, dh
+   ; mov dl, al
+   ; call printf 
+   ; pop dx
 
 is_esc:
     cmp al,27     ;if key is ESC
@@ -199,8 +199,7 @@ elevator_pause_loop:
     jz elevator_pause_loop_continue
     mov ah, 0
     int 16h
-
-    cmp al,27     ;if key is ESC
+        cmp al,27     ;if key is ESC
     jz exit       ;quit
     cmp al, key_pause
     jz elevator_pause_ret
@@ -346,8 +345,8 @@ elevator_stop proc near ;stop the timer, stop the elevator
     mov al, 0
     mov level_select, al
     call far ptr led_show
-    call far ptr oled_setdata
     call far ptr seg_show
+    call far ptr oled_setdata
     pop ds
     pop ax
     pop dx
@@ -602,11 +601,11 @@ oled_update proc far
     jc oled_update_col
     xor cl, cl
 oled_update_clear:
-    mov al, 0
-    mov dx, oled_col
-    out dx, al
-    mov dx, oled_row
-    out dx, al
+    mov al,0
+    mov dx,oled_col
+    out dx,al
+    mov dx,oled_row
+    out dx,al
 oled_update_col:
     mov al, 1
     shl al, cl
@@ -702,9 +701,9 @@ direction_change endp
 ;ret:   none
 elevator_action proc far
     push ax
-    ;mov al, is_running
-    ;cmp al, true
-    ;jnz elevator_action_ret
+   ; mov al, is_running
+   ; cmp al, true
+   ; jnz elevator_action_ret
     mov ah, cur_level
     mov al, direction
     cmp al, up
@@ -717,8 +716,8 @@ elevator_action_down:
     dec ah
     mov cur_level, ah
 elevator_action_ret:
-    call far ptr oled_setdata
     call far ptr seg_show
+    call far ptr oled_setdata
     pop ax
     retf
 elevator_action endp
@@ -802,21 +801,21 @@ elevator_update endp
 ;param: none
 ;return:none
 delay proc near
-	push ax
+    push ax
     push bx
-	push cx
-	mov bx, 200
+    push cx
+    mov bx, 200
 ZZZ: 
-	mov cx, 2000
+    mov cx, 2000
 ZZ: 
-	loop ZZ
-	dec bx
-	jne ZZZ
+    loop ZZ
+    dec bx
+    jne ZZZ
 
-	pop cx
+    pop cx
     pop bx
-	pop ax
-	ret
+    pop ax
+    ret
 delay endp
 ;param: none
 ;ret:   none
