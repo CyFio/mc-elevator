@@ -147,6 +147,7 @@ is_esc:
     call key_update
 
 main_continue:
+   ;call far ptr oled_setdata
     call far ptr oled_update
    ; mov dx, offset str_normal
    ; call far ptr print_str 
@@ -290,6 +291,7 @@ elevator_stop proc near ;stop the timer, stop the elevator
     mov al, 0
     mov level_select, al
     call far ptr led_show
+    call far ptr oled_setdata
     pop ds
     pop ax
     pop dx
@@ -323,6 +325,9 @@ elevator_start proc near ;elevator starts
     push ds
     mov ax, data
     mov ds, ax
+    mov al, level_select
+    cmp al, 0
+    jz elevator_start_ret
     mov al, true
     mov is_running, al
     mov dx,io8254c;8254 Timer1->function3 
@@ -335,6 +340,7 @@ elevator_start proc near ;elevator starts
     out dx,al 
     mov dx, offset str_start
     call far ptr print_str
+elevator_start_ret:
     pop ds
     pop ax
     pop dx
@@ -604,10 +610,9 @@ print_str proc far
     retf
 print_str endp
 ;param: none
-;ret:   none
+;ret:   bx: if the elevator should stop immediately
 direction_change proc far
     push ax
-    push bx
     push cx
     push dx
     mov al, level_select
@@ -626,14 +631,14 @@ direction_change_up:
     mov ah, al
     shr ah, cl
     cmp ah, 0 ;if current direction is up and upper levels selected, go up
-    jnz direction_change_ret
+    jnz direction_change_ret_false
     xor bl, up
     mov direction, bl ;change direction
     inc bh
     cmp bh, 2
-    jnc direction_change_down
-    mov al, false
-    mov is_running, al
+    jc direction_change_down ;no level selected, stop
+    mov bl, true
+    xor bh, bh
     jmp direction_change_ret
 direction_change_down:
     mov ah, al
@@ -644,18 +649,21 @@ direction_change_down:
     shl ah, cl
     pop cx
     cmp ah, 0
-    jnz direction_change_ret
+    jnz direction_change_ret_false
     xor bl, up
     mov direction, bl ;change direction
     inc bh
     cmp bh, 2
-    jnc direction_change_up
-    mov al, false
-    mov is_running, al
+    jc direction_change_up
+    mov bl, true
+    xor bh, bh
+    jmp direction_change_ret
+direction_change_ret_false:
+    mov bl, false
+    xor bh, bh
 direction_change_ret:
     pop dx
     pop cx
-    pop bx
     pop ax
     retf
 direction_change endp
@@ -663,6 +671,7 @@ direction_change endp
 ;ret:   none
 elevator_action proc far
     push ax
+    call far ptr oled_setdata
     mov ah, cur_level
     mov al, direction
     cmp al, up
@@ -722,6 +731,7 @@ elevator_arrival proc far ;elevator arrive
 
     mov dx, offset str_arrival
     call far ptr print_str
+    call far ptr oled_setdata
     pop ds
     pop ax
     pop dx
@@ -733,6 +743,10 @@ elevator_arrival endp
 elevator_update proc far
     push bx
     call direction_change
+    cmp bl, true
+    jnz elevator_update_act
+    call elevator_arrival
+elevator_update_act:
     call elevator_action
     call arrival_check
     cmp bl, true
