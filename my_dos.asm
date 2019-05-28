@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Tuesday,May 28th 2019, 7:52:08 am
+ * Last Modified: Tuesday,May 28th 2019, 8:02:50 am
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -68,8 +68,7 @@ menu            db      '************************************************',0DH,0
                 db      'd------------go directly!',0Dh,0Ah  
                 db      's------------stop!',0Dh,0Ah 
                 db      'p------------pause!',0Dh,0Ah,'$' 
-lift_info       db      'lift running!',0dh, 0ah, '$'
-zawaludo        db      'The WORLD!!!                             ',0ah,'$'
+str_update      db      'elevator running!                        ',0dh, 0ah, '$'
 str_continue    db      'elevator continues!                      ',0ah,'$'
 str_pause       db      'elevator paused!                         ',0ah,'$'
 str_start       db      'elevator starts!                         ',0ah,'$'
@@ -517,22 +516,36 @@ print_str proc near
     pop ax
     ret
 print_str endp
+direction_change proc far
+    ret
+direction_change endp
+elevator_action proc far
+    ret
+elevator_action endp
+arrival_check proc far
+    ret
+arrival_check endp
+elevator_update proc far
+    call direction_change
+    call elevator_action
+    call arrival_check
+    ret
+elevator_update proc endp
 ;param: none
 ;ret:   none
 int_proc proc far ;INT process
+    cli
     push dx
     push ax
     push ds
 
-    mov ax, seg lift_info
-    mov ds, ax
+    mov ax, seg str_update    mov ds, ax
 
     mov al, int_count   ;INT count
     inc al
     mov int_count, al
 
-    mov dx, offset lift_info
-    mov ah, 09h
+    mov dx, offset str_update    mov ah, 09h
     int 21h
 
     mov al,20h ;Send EOI
@@ -541,6 +554,7 @@ int_proc proc far ;INT process
     pop ds
     pop ax
     pop dx
+    sti
     iret
 int_proc endp
 
