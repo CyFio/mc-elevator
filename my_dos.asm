@@ -88,9 +88,28 @@ select_count    db      0              ;number of selected levels
 cur_level       db      1              ;current level the elevator locates
 direction       db      up             ;current moving direction
 is_ignore       db      false          ;whether the elevator ignore level select
-
+oled_ptr_row    dw      offset oled_1  ;oled table ptr
+oled_ptr_col    db      0
 ;data table
 seg_led_code    db   3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,6fh ;seg_led code
+oled_0          db   00h,00h,7eh,81h,81h,7eh,00h,00h
+oled_1          db   00h,00h,01h,ffh,41h,20h,00h,00h
+oled_2          db   00h,00h,72h,8ah,86h,42h,00h,00h
+oled_3          db   00h,00h,62h,95h,89h,42h,00h,00h
+oled_4          db   00h,08h,08h,ffh,48h,28h,18h,00h
+oled_5          db   00h,00h,86h,89h,91h,e1h,00h,00h
+oled_6          db   00h,00h,9eh,92h,92h,feh,00h,00h
+oled_7          db   00h,00h,feh,80h,80h,80h,00h,00h
+oled_8          db   00h,00h,feh,92h,92h,feh,00h,00h
+oled_9          db   00h,00h,feh,92h,92h,f2h,00h,00h
+oled_up         db   00h,20h,60h,ffh,ffh,60h,20h,00h
+oled_down       db   00h,04h,06h,ffh,ffh,06h,04h,00h
+oled_table      dw   offset oled_0,offset oled_1,
+                     offset oled_2,offset oled_3,
+                     offset oled_4,offset oled_5,
+                     offset oled_6,offset oled_7,
+                     offset oled_8,offset oled_9,
+                     offset oled_up,offset oled_down
 data ends
 stacks segment
 db 100 dup (?)
@@ -274,9 +293,8 @@ elevator_stop proc near ;stop the timer, stop the elevator
     mov al,76h
     out dx,al 
     mov al, 0
-    mov level_select, 0
-    mov dx, io74273
-    out dx, al
+    mov level_select, al
+    call far ptr led_show
     pop ds
     pop ax
     pop dx
@@ -509,6 +527,34 @@ seg_show endp
 ;param: none
 ;ret:   none
 oled_update proc far
+    push ax
+    push bx
+    push cx
+    push dx
+    xor ch, ch
+    mov cl, oled_ptr_col
+    inc cl
+    cmp cl, 8
+    jc oled_update_col
+    xor cl, cl
+oled_update_col:
+    mov al, 1
+    shl al, cl
+    mov dx, oled_col  ;col select
+    out dx, al
+    mov oled_ptr_col, cl ;update col ptr
+
+oled_update_row:
+    mov bx, oled_ptr_row
+    add bx, cx
+    mov al, [bx]
+    mov dx, oled_row
+    out dx, al
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     retf
 oled_update endp
 ;param: dx: str offset
