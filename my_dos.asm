@@ -78,6 +78,8 @@ str_direct_st   db      'elevator direct mode: on                 ',0ah,'$'
 str_direct_ed   db      'elevator direct mode: off                ',0ah,'$'
 str_normal      db      'normal  ','$'
 
+;debug log
+
 ;elevator data
 is_on           db      true           ;whether the elevator is on
 is_running      db      false          ;whether the elevator is running
@@ -133,7 +135,7 @@ is_esc:
 main_continue:
     call far ptr oled_update
     mov dx, offset str_normal
-    call print_str 
+    call far ptr print_str 
     jmp main
 
 exit: cli
@@ -466,7 +468,7 @@ key_update_p:
 key_update_resume:
     call elevator_continue
 key_update_ret:
-    push bx
+    pop bx
     pop dx
     pop ax
     ret
