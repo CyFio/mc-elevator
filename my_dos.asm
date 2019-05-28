@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Tuesday,May 28th 2019, 8:07:00 am
+ * Last Modified: Tuesday,May 28th 2019, 8:56:20 am
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -69,6 +69,7 @@ menu            db      '************************************************',0DH,0
                 db      's------------stop!',0Dh,0Ah 
                 db      'p------------pause!',0Dh,0Ah,'$' 
 str_update      db      'elevator running!                        ',0dh, 0ah, '$'
+str_arrival     db      'elevator arrival!                        ', 0ah, '$'
 str_continue    db      'elevator continues!                      ',0ah,'$'
 str_pause       db      'elevator paused!                         ',0ah,'$'
 str_start       db      'elevator starts!                         ',0ah,'$'
@@ -519,24 +520,137 @@ print_str endp
 ;param: none
 ;ret:   none
 direction_change proc far
-
-    
+    push ax
+    push bx
+    push cx
+    push dx
+    mov al, level_select
+    cmp al, 0
+    jne direction_change_main
+    mov al, false
+    mov is_running, al
+    jmp direction_change_ret
+direction_change_main:
+    mov cl, cur_level
+    xor bh, bh          ;use bh as flag
+    mov bl, direction
+    cmp bl, up
+    jne direction_change_down
+direction_change_up:
+    mov ah, al
+    shr ah, cl
+    cmp ah, 0 ;if current direction is up and upper levels selected, go up
+    jne direction_change_ret
+    xor bl, up
+    mov direction, bl ;change direction
+    inc bh
+    cmp bh, 2
+    jnc direction_change_down
+    mov al, false
+    mov is_running, al
+    jmp direction_change_ret
+direction_change_down:
+    mov ah, al
+    mov ch, 9
+    sub ch, cl
+    shl ah, ch
+    cmp ah, 0
+    jne direction_change_ret
+    xor bl, up
+    mov direction, bl ;change direction
+    inc bh
+    cmp bh, 2
+    jnc direction_change_up
+    mov al, false
+    mov is_running, al
+direction_change_ret:
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     ret
 direction_change endp
 ;param: none
 ;ret:   none
 elevator_action proc far
+    push ax
+    mov ah, cur_level
+    mov al, direction
+    cmp al, up
+    jne elevator_action_down
+elevator_action_up:
+    inc ah
+    jmp elevator_action_ret
+elevator_action_down:
+    dec ah
+elevator_action_ret:
+    mov cur_level, ah
+    call seg_show
+    pop ax
     ret
 elevator_action endp
 ;param: none
-;ret:   none
+;ret:   bl: is_arrival
 arrival_check proc far
+    push ax
+    push dx
+    push cx
+    xor bl, bl  ;default: not arrival
+    mov al, level_select
+    mov dl, al
+    mov cl, cur_level
+    dec cl
+    mov ah, 1
+    shl ah, cl
+    and dl, ah  ;if current level selected
+    cmp dl,0
+    je arrival_check_ret;not arrival
+    mov bl, true
+    xor al, ah  ;arrival, level unselected
+    mov level_select, al
+    call led_show
+    
+arrival_check_ret:
+    pop cx
+    pop dx
+    pop ax
     ret
 arrival_check endp
+;param: none
+;ret:   none
+elevator_arrival proc far ;elevator arrive
+    cli
+    push dx
+    push ax
+    push ds
+    mov ax, data
+    mov ds, ax
+    mov al, false
+    mov is_running, al
+    mov dx,io8254c;8254 Timer1->function3 
+    mov al,76h
+    out dx,al 
+
+    mov dx, offset str_arrival
+    call print_str
+    pop ds
+    pop ax
+    pop dx
+    sti
+    ret
+elevator_arrival endp
+;param: none
+;ret:   none
 elevator_update proc far
+    push bx
     call direction_change
     call elevator_action
     call arrival_check
+    cmp bl, true
+    jne elevator_update_ret
+    call elevator_arrival
+elevator_update_ret:
+    pop bx
     ret
 elevator_update proc endp
 ;param: none
