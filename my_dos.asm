@@ -95,7 +95,7 @@ seg_led_code    db   3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,6fh ;seg_led code
 oled_0          db   00h ,00h ,7eh ,81h ,81h ,7eh ,00h ,00h
 oled_1          db   00h ,00h ,01h ,0ffh,41h ,20h ,00h ,00h
 oled_2          db   00h ,00h ,72h ,8ah ,86h ,42h ,00h ,00h
-oled_3          db   00h ,00h ,9fh ,d1h ,b1h ,91h ,00h ,00h
+oled_3          db   00h ,00h ,9fh ,0d1h,0b1h,91h ,00h ,00h
 oled_4          db   00h ,08h ,08h ,0ffh,48h ,28h ,18h ,00h
 oled_5          db   00h ,00h ,9fh ,91h ,91h ,0f1h,00h ,00h
 oled_6          db   00h ,00h ,9eh ,92h ,92h ,0feh,00h ,00h
