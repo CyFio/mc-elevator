@@ -1,16 +1,16 @@
-/*
- * CopyRight (C) 2019 CyFio OranGe™
- * Created Time: Thursday,May 23rd 2019, 2:26:48 pm
- * Author: CyFio OranGe
- * Author E-mail: 213170687@seu.edu.cn
- * ------------------------------------------------
- * Last Modified: Tuesday,May 28th 2019, 8:56:20 am
- * Modified By CyFio(213170687@seu.edu.cn)
- * ------------------------------------------------
- * Filename: my_dos.asm
- * Project: My_Elevator
- * Description: use English to avoid garbling in dos
- */
+;
+; CopyRight (C) 2019 CyFio OranGe™
+; Created Time: Thursday,May 23rd 2019, 2:26:48 pm
+; Author: CyFio OranGe
+; Author E-mail: 213170687@seu.edu.cn
+; ------------------------------------------------
+; Last Modified: Tuesday,May 28th 2019, 9:07:28 am
+; Modified By CyFio(213170687@seu.edu.cn)
+; ------------------------------------------------
+; Filename: my_dos.asm
+; Project: My_Elevator
+; Description: use English to avoid garbling in dos
+;
 data segment
 ;ioport definition
 ioport          equ     3100h-0280h     ;TPC card base io address(in DOS)
@@ -109,7 +109,7 @@ int 21h
 call init8254
 call init8255
 call int_start
-call seg_show
+call far ptr seg_show
 
 main:
     mov ah,1      ;wait key input
@@ -128,7 +128,7 @@ is_esc:
     cmp al,27     ;if key is ESC
     je exit       ;quit
     call key_update
-    call oled_update
+    call far ptr oled_update
 
 main_continue:
     jmp main
@@ -262,7 +262,7 @@ elevator_stop proc near ;stop the timer, stop the elevator
     mov ax, data
     mov ds, ax
     mov dx, offset str_stop
-    call print_str
+    call far ptr print_str
     mov al, false
     mov is_running, al
     mov dx,io8254c;this OCW writing step stops the timer
@@ -288,7 +288,7 @@ elevator_pause proc near ;stop the timer, stop the elevator
     mov ax, data
     mov ds, ax
     mov dx, offset str_pause
-    call print_str
+    call far ptr print_str
 
     pop ds
     pop ax
@@ -316,7 +316,7 @@ elevator_start proc near ;elevator starts
     mov al,ah 
     out dx,al 
     mov dx, offset str_start
-    call print_str
+    call far ptr print_str
     pop ds
     pop ax
     pop dx
@@ -334,7 +334,7 @@ elevator_continue proc near ;elevator continues
     mov ds, ax
 
     mov dx, offset str_continue
-    call print_str
+    call far ptr print_str
     pop ds
     pop ax
     pop dx
@@ -404,7 +404,7 @@ update_led_data_view:
     mov al, level_select
     xor al, ah
     mov level_select, al
-    call led_show
+    call far ptr led_show
 update_led_data_ret:
     pop dx
     pop cx
@@ -585,7 +585,7 @@ elevator_action_down:
     dec ah
 elevator_action_ret:
     mov cur_level, ah
-    call seg_show
+    call far ptr seg_show
     pop ax
     ret
 elevator_action endp
@@ -608,7 +608,7 @@ arrival_check proc far
     mov bl, true
     xor al, ah  ;arrival, level unselected
     mov level_select, al
-    call led_show
+    call far ptr led_show
     
 arrival_check_ret:
     pop cx
@@ -632,7 +632,7 @@ elevator_arrival proc far ;elevator arrive
     out dx,al 
 
     mov dx, offset str_arrival
-    call print_str
+    call far ptr print_str
     pop ds
     pop ax
     pop dx
@@ -668,9 +668,9 @@ int_proc proc far ;INT process
     mov int_count, al
 
     mov dx, offset str_update    
-    call print_str
+    call far ptr print_str
 
-    call elevator_update
+    call far ptr elevator_update
 
     mov al,20h ;Send EOI
     out 0a0h,al
