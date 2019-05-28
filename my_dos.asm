@@ -4,7 +4,7 @@
  * Author: CyFio OranGe
  * Author E-mail: 213170687@seu.edu.cn
  * ------------------------------------------------
- * Last Modified: Tuesday,May 28th 2019, 8:02:50 am
+ * Last Modified: Tuesday,May 28th 2019, 8:07:00 am
  * Modified By CyFio(213170687@seu.edu.cn)
  * ------------------------------------------------
  * Filename: my_dos.asm
@@ -260,7 +260,7 @@ elevator_stop proc near ;stop the timer, stop the elevator
     push ds
     mov ax, data
     mov ds, ax
-    mov dx, str_stop
+    mov dx, offset str_stop
     call print_str
     mov al, false
     mov is_running, al
@@ -286,7 +286,7 @@ elevator_pause proc near ;stop the timer, stop the elevator
     push ds
     mov ax, data
     mov ds, ax
-    mov dx, str_pause
+    mov dx, offset str_pause
     call print_str
 
     pop ds
@@ -314,7 +314,7 @@ elevator_start proc near ;elevator starts
     out dx,al 
     mov al,ah 
     out dx,al 
-    mov dx, str_start
+    mov dx, offset str_start
     call print_str
     pop ds
     pop ax
@@ -332,7 +332,7 @@ elevator_continue proc near ;elevator continues
     mov ax, data
     mov ds, ax
 
-    mov dx, str_continue
+    mov dx, offset str_continue
     call print_str
     pop ds
     pop ax
@@ -469,7 +469,7 @@ key_update_ret:
 key_update endp
 ;param: none
 ;ret:   none
-led_show proc near
+led_show proc far
     push ax
     push dx
     mov al, level_select
@@ -481,7 +481,7 @@ led_show proc near
 led_show endp
 ;param: none
 ;ret:   none
-seg_show proc near
+seg_show proc far
     push ax
     push dx
     push bx
@@ -500,12 +500,12 @@ seg_show proc near
 seg_show endp
 ;param: none
 ;ret:   none
-oled_update proc near
+oled_update proc far
     ret
 oled_update endp
 ;param: dx: str offset
 ;ret:   none
-print_str proc near
+print_str proc far
     push ax
     push ds
     mov ax, data
@@ -516,12 +516,20 @@ print_str proc near
     pop ax
     ret
 print_str endp
+;param: none
+;ret:   none
 direction_change proc far
+
+    
     ret
 direction_change endp
+;param: none
+;ret:   none
 elevator_action proc far
     ret
 elevator_action endp
+;param: none
+;ret:   none
 arrival_check proc far
     ret
 arrival_check endp
@@ -545,8 +553,10 @@ int_proc proc far ;INT process
     inc al
     mov int_count, al
 
-    mov dx, offset str_update    mov ah, 09h
-    int 21h
+    mov dx, offset str_update    
+    call print_str
+
+    call elevator_update
 
     mov al,20h ;Send EOI
     out 0a0h,al
