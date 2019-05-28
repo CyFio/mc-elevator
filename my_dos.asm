@@ -32,7 +32,7 @@ false           equ     0               ;bool define
 up              equ     1
 down            equ     0               ;direction define
 ;key map
-ESC             equ     27
+key_ESC         equ     27
 key_run         equ     'r'
 key_stop        equ     's'
 key_direct      equ     'd'
@@ -53,9 +53,9 @@ menu            db      '************************************************',0DH,0
                 db      '*      liftor   procedures                      *',0DH,0AH
                 db      '*      8254cs~280h 8255cs~288h                  *',0Dh,0Ah      
                 db      '*      74273cs~290h                             *',0Dh,0Ah      
-                db      '*      oled_row~298h oled_col~290h              *',0Dh,0Ah
+                db      '*      oled_row~298h oled_col~2a0h              *',0Dh,0Ah
                 db      '*      8255b---seg_led                          *',0Dh,0Ah
-                db      '*      273-----led0~led7                        *',0Dh,0Ah    
+                db      '*      8255a---led0~led7                        *',0Dh,0Ah    
                 db      '*      gate0&&gate1--5V                         *',0Dh,0Ah
                 db      '*      clk0---1MHZ     clk1---out0              *',0Dh,0Ah 
                 db      '*      clk               WR----IOW              *',0Dh,0Ah  
@@ -76,6 +76,7 @@ str_start       db      'elevator starts!                         ',0ah,'$'
 str_stop        db      'elevator stops!                          ',0ah,'$'
 str_direct_st   db      'elevator direct mode: on                 ',0ah,'$'
 str_direct_ed   db      'elevator direct mode: off                ',0ah,'$'
+str_normal      db      'normal  ','$'
 
 ;elevator data
 is_on           db      true           ;whether the elevator is on
@@ -128,9 +129,11 @@ is_esc:
     cmp al,27     ;if key is ESC
     je exit       ;quit
     call key_update
-    call far ptr oled_update
 
 main_continue:
+    call far ptr oled_update
+    mov dx, offset str_normal
+    call print_str 
     jmp main
 
 exit: cli
@@ -182,7 +185,7 @@ init8254 endp
 init8255 proc near
     push dx
     push ax
-    mov dx, io8255b
+    mov dx, io8255d
     mov al, 10001000b ;PB->output
     out dx, al
     pop ax
@@ -474,11 +477,11 @@ led_show proc far
     push ax
     push dx
     mov al, level_select
-    mov dx, io74273
+    mov dx, io8255a
     out dx, al
     pop dx
     pop ax
-    ret
+    retf
 led_show endp
 ;param: none
 ;ret:   none
@@ -488,7 +491,7 @@ seg_show proc far
     push bx
     lea bx, seg_led_code
     mov al, cur_level
-    dec al
+    ;dec al
     xor ah, ah
     add bx, ax
     mov al, [bx]
@@ -497,12 +500,12 @@ seg_show proc far
     pop bx
     pop dx
     pop ax
-    ret
+    retf
 seg_show endp
 ;param: none
 ;ret:   none
 oled_update proc far
-    ret
+    retf
 oled_update endp
 ;param: dx: str offset
 ;ret:   none
@@ -515,7 +518,7 @@ print_str proc far
     int 21h
     pop ds
     pop ax
-    ret
+    retf
 print_str endp
 ;param: none
 ;ret:   none
@@ -551,9 +554,12 @@ direction_change_up:
     jmp direction_change_ret
 direction_change_down:
     mov ah, al
+    push cx
     mov ch, 9
     sub ch, cl
-    shl ah, ch
+    mov cl, ch
+    shl ah, cl
+    pop cx
     cmp ah, 0
     jne direction_change_ret
     xor bl, up
@@ -568,7 +574,7 @@ direction_change_ret:
     pop cx
     pop bx
     pop ax
-    ret
+    retf
 direction_change endp
 ;param: none
 ;ret:   none
@@ -587,7 +593,7 @@ elevator_action_ret:
     mov cur_level, ah
     call far ptr seg_show
     pop ax
-    ret
+    retf
 elevator_action endp
 ;param: none
 ;ret:   bl: is_arrival
@@ -614,7 +620,7 @@ arrival_check_ret:
     pop cx
     pop dx
     pop ax
-    ret
+    retf
 arrival_check endp
 ;param: none
 ;ret:   none
@@ -637,7 +643,7 @@ elevator_arrival proc far ;elevator arrive
     pop ax
     pop dx
     sti
-    ret
+    retf
 elevator_arrival endp
 ;param: none
 ;ret:   none
@@ -651,8 +657,8 @@ elevator_update proc far
     call elevator_arrival
 elevator_update_ret:
     pop bx
-    ret
-elevator_update proc endp
+    retf
+elevator_update endp
 ;param: none
 ;ret:   none
 int_proc proc far ;INT process
@@ -661,7 +667,8 @@ int_proc proc far ;INT process
     push ax
     push ds
 
-    mov ax, seg str_update    mov ds, ax
+    mov ax, seg str_update 
+    mov ds, ax
 
     mov al, int_count   ;INT count
     inc al
