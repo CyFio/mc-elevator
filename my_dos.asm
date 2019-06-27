@@ -136,47 +136,38 @@ main:
     mov ah, 0
     int 16h
 
- ;   push dx
- ;   xor dh, dh
- ;   mov dl, al
- ;   call printf 
- ;   pop dx
-
 is_esc:
     cmp al,27     ;if key is ESC
     jz exit       ;quit
     call key_update
 
 main_continue:
-   ;call far ptr oled_setdata
     call far ptr oled_update
-   ; mov dx, offset str_normal
-   ; call far ptr print_str 
     jmp main
 
 exit: cli
-mov bl, irq_mask_2_7 ;recover irq mask
-not bl
-in al, 21h
-or al, bl
-out 21h, al
-mov bl, irq_mask_9_15
-not bl
-in al, 0a1h
-or al, bl
-out 0a1h, al
-mov dx,ipreg ;recover irq vector
-mov ax,csreg
-mov ds,ax
-mov ah,25h
-mov al,int_vect
-int 21h
-mov dx,ioport_cent+68h ;set TPC card's 9054 to close interrupt
-in ax,dx
-and ax,0f7ffh
-out dx,ax
-mov ah,4ch
-int 21h
+    mov bl, irq_mask_2_7 ;recover irq mask
+    not bl
+    in al, 21h
+    or al, bl
+    out 21h, al
+    mov bl, irq_mask_9_15
+    not bl
+    in al, 0a1h
+    or al, bl
+    out 0a1h, al
+    mov dx,ipreg ;recover irq vector
+    mov ax,csreg
+    mov ds,ax
+    mov ah,25h
+    mov al,int_vect
+    int 21h
+    mov dx,ioport_cent+68h ;set TPC card's 9054 to close interrupt
+    in ax,dx
+    and ax,0f7ffh
+    out dx,ax
+    mov ah,4ch
+    int 21h
 ;param: none
 ;ret:   none
 elevator_pause proc near ;stop the timer, stop the elevator
@@ -267,50 +258,50 @@ init8255 endp
 ;param: none
 ;ret:   none
 int_start proc near
-cli
-push ax
-push bx
-push dx
-push ss
-push ds
-push es
-mov ax,data
-mov ds,ax
-mov es,ax
-mov ax,stacks
-mov ss,ax
-mov dx,ioport_cent+68h ;et TPC card's 9054 to enable interrupt
-in ax,dx
-or ax,0900h
-out dx,ax               
-mov al,int_vect ;keep old INT vector
-mov ah,35h
-int 21h
-mov ax,es
-mov csreg,ax
-mov ipreg,bx
-mov ax,cs ;set new INT vector
-mov ds,ax
-mov dx,offset int_proc
-mov al,int_vect
-mov ah,25h
-int 21h
-in al, 21h ;set IRQ mask
-and al, irq_mask_2_7
-out 21h, al
-in al, 0a1h
-and al, irq_mask_9_15
-out 0a1h, al
-mov ax,data
-mov ds,ax
-pop es
-pop ds
-pop ss
-pop dx
-pop bx
-pop ax
-sti
-ret
+    cli
+    push ax
+    push bx
+    push dx
+    push ss
+    push ds
+    push es
+    mov ax,data
+    mov ds,ax
+    mov es,ax
+    mov ax,stacks
+    mov ss,ax
+    mov dx,ioport_cent+68h ;et TPC card's 9054 to enable interrupt
+    in ax,dx
+    or ax,0900h
+    out dx,ax               
+    mov al,int_vect ;keep old INT vector
+    mov ah,35h
+    int 21h
+    mov ax,es
+    mov csreg,ax
+    mov ipreg,bx
+    mov ax,cs ;set new INT vector
+    mov ds,ax
+    mov dx,offset int_proc
+    mov al,int_vect
+    mov ah,25h
+    int 21h
+    in al, 21h ;set IRQ mask
+    and al, irq_mask_2_7
+    out 21h, al
+    in al, 0a1h
+    and al, irq_mask_9_15
+    out 0a1h, al
+    mov ax,data
+    mov ds,ax
+    pop es
+    pop ds
+    pop ss
+    pop dx
+    pop bx
+    pop ax
+    sti
+    ret
 int_start endp
 ;param: al:character
 ;ret:   none
@@ -799,25 +790,7 @@ elevator_update_ret:
     pop bx
     retf
 elevator_update endp
-;param: none
-;return:none
-delay proc near
-	push ax
-    push bx
-	push cx
-	mov bx, 200
-ZZZ: 
-	mov cx, 2000
-ZZ: 
-	loop ZZ
-	dec bx
-	jne ZZZ
 
-	pop cx
-    pop bx
-	pop ax
-	ret
-delay endp
 ;param: none
 ;ret:   none
 int_proc proc far ;INT process
